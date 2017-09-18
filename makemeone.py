@@ -197,3 +197,5 @@ for key, value in configData.iteritems():
         obj = value #this is an ordered dict
         #could send entry,obj to function here
         snmpSetCmdHandler(agentIp, module, entry, obj)
+
+jsonConfigFile.close()

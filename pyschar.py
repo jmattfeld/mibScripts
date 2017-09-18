@@ -254,3 +254,6 @@ for key, val in configData.iteritems():
         print('disallowed chars: %s\n' %disallowedChars)
 
         specialCharReportSingleLineWrite(obj, disallowedChars, specialCharReport)
+
+jsonConfigFile.close()
+specialCharReport.close()

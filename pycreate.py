@@ -623,3 +623,6 @@ for key, value in configData.iteritems():
 
             specialCharReportSingleLineWrite(moduleAndLeaf, disallowedCharsDuringCreate,
                                              disallowedCharsPostCreate, specialCharReport)
+
+jsonConfigFile.close()
+specialCharReport.close()
