@@ -1,14 +1,11 @@
 #!/usr/bin/python
 
-"""
-Usage:
-    $ python pyschar.py [-mode(-s|-m)] [agent-IPv4] [input(singleOID|confFile)] [outputFilename]
-"""
-    
-from __future__ import print_function
-
-'''===================================================================================
+"""===================================================================================
 pyschar.py
+
+Usage:
+    $ python pyschar.py [agent-IPv4] [outputFilename]
+    
 
 Description:
     script to excercise setting writeable string MIB leaves with special chars
@@ -20,20 +17,14 @@ Prerequisites:
     It is available from: http://net-snmp.org/
 
 Parameters:
-    mode (-s|-m):
-        -s: exercises snmpset on a single OID, input must be a single OID
-        -m: exercises snmpset on a list of OIDSs, input must be a .csv file
-            containing a columnar list of OIDs with the header 'oid'
     agent-IPv4:
         the IP address of the SNMP manager agent.
-    input:
-        either an OID or a .conf file, depending on the mode (see above).
     outputFilename:
         filename of the output .csv to write the special char report to.
     
 Author:
     Jeremy Mattfeld, jmattfel@ciena.com
-==================================================================================='''
+==================================================================================="""
 
 from subprocess import Popen, PIPE, check_output, check_call, CalledProcessError, STDOUT
 from collections import OrderedDict
@@ -209,74 +200,57 @@ def specialCharReportSingleLineWrite(moduleAndLeaf, chars, out):
 
 #csv writer definitions
 csv.register_dialect('singlequote', delimiter='\t', escapechar=None, doublequote=True, quoting=csv.QUOTE_MINIMAL, quotechar="'")
-
+usage = '''$ python pyschar.py [agent-IPv4] [outputFilename]'''
 
 #command line arguments error checking
-if (len(sys.argv) < 5) or (sys.argv[1] == '-h') or (sys.argv[1] == '--help'):
-    if (len(sys.argv) < 5):
+if (len(sys.argv) < 3):
+    if ((len(sys.argv) == 2) and ((sys.argv[1] == '-h') or (sys.argv[1] == '--help'))):
+        print(__doc__)
+    else:
         print("ERROR: missing required argument")
-    print(__doc__)
+        print(usage)
     sys.exit()
 
-if (len(sys.argv) > 5):
+if (len(sys.argv) > 3):
     print("ERROR: unexpected argument " + sys.argv[3])
-    print(__doc__)
-    sys.exit()
-
-mode = str(sys.argv[1])
-if ((mode != '-s') and (mode != '-m')):
-    print("ERROR: unrecognized mode argument " + mode)
-    print(__doc__)
+    print(usage)
     sys.exit()
 
 #check IPv4 address
-agentIp = str(sys.argv[2])
+agentIp = str(sys.argv[1])
 try:
     IPy.IP(agentIp)
 except:
     print("ERROR: you must use a valid SNMP-agent IPv4")
-    print(__doc__)
+    print(usage)
     sys.exit()
 
 #report file I/O
-outFilename = str(sys.argv[4])
+outFilename = str(sys.argv[2])
 try:
     specialCharReport = open(outFilename, 'w')
 except IOError:
     print("Error: %s cannot be opened for writing." % (outFilename))
     sys.exit()
 
+configFilename = 'pyschar.conf'
 
-if mode == '-s':
-    #check OID
-    singleOid = str(sys.argv[3])
-    print('mode -s, processing snmpset on %s' % (singleOid))
-    obj = check_output(['snmptranslate ' + singleOid], shell=True)
-    disallowedChars = snmpSetHandler(agentIp, obj)
+print('parsing %s for OIDs...\n' %configFilename)
 
-    if status != 0:
-        print('snmpSetCall returned %d on %s\n' % (status, singleOid))
+try:
+    with open(configFilename) as jsonConfigFile:
+        configData = json.load(jsonConfigFile, object_pairs_hook=OrderedDict)
+except IOError:
+    print("Error: could not find file %s" % (configFilename))
     sys.exit()
-else:
-    #mode is '-m' so get a dictionary of OIDs to process
-    configFilename = str(sys.argv[3])
 
-    print('mode -m, parsing %s for OIDs...\n' %configFilename)
-    
-    try:
-        with open(configFilename) as jsonConfigFile:
-            configData = json.load(jsonConfigFile, object_pairs_hook=OrderedDict)
-    except IOError:
-        print("Error: could not find file %s" % (configFilename))
-        sys.exit()
+for key, val in configData.iteritems():
+    module = key
+    leaves = val
+    for leaf in leaves:
+        obj = module + "::" + leaf
+        print(obj)
+        disallowedChars = snmpSetHandler(agentIp, obj)
+        print('disallowed chars: %s\n' %disallowedChars)
 
-    for key, val in configData.iteritems():
-        module = key
-        leaves = val
-        for leaf in leaves:
-            obj = module + "::" + leaf
-            print(obj)
-            disallowedChars = snmpSetHandler(agentIp, obj)
-            print('disallowed chars: %s\n' %disallowedChars)
-
-            specialCharReportSingleLineWrite(obj, disallowedChars, specialCharReport)
+        specialCharReportSingleLineWrite(obj, disallowedChars, specialCharReport)
