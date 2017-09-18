@@ -180,7 +180,7 @@ except:
 
 #file I/O
 #configFilename = "makemeone.conf"
-configFilename = "testing.conf"
+configFilename = "simplytesting.conf"
 try:
     with open(configFilename) as jsonConfigFile:
         configData = json.load(jsonConfigFile, object_pairs_hook=OrderedDict)
