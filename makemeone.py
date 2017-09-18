@@ -179,8 +179,8 @@ except:
     sys.exit()
 
 #file I/O
-configFilename = "makemeone.conf"
-#configFilename = "test.conf"
+#configFilename = "makemeone.conf"
+configFilename = "test.conf"
 try:
     with open(configFilename) as jsonConfigFile:
         configData = json.load(jsonConfigFile, object_pairs_hook=OrderedDict)

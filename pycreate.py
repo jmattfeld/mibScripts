@@ -552,8 +552,8 @@ except:
 
 
 #file I/O
-configFilename = "pycreate.conf"
-#configFilename = "test.conf"
+#configFilename = "pycreate.conf"
+configFilename = "test.conf"
 try:
     with open(configFilename) as jsonConfigFile:
         configData = json.load(jsonConfigFile, object_pairs_hook=OrderedDict)
